@@ -106,12 +106,10 @@ class Interval:
         :param upper: value of the upper bound.
         :param right: either CLOSED or OPEN.
         """
-        if cls._is_inf(lower):
-            lower = inf if lower > 0 else -inf
-            left = Bound.OPEN
-        if cls._is_inf(upper):
-            upper = inf if upper > 0 else -inf
-            right = Bound.OPEN
+        lower = inf if cls._is_pinf(lower) else -inf if cls._is_ninf(lower) else lower
+        upper = inf if cls._is_pinf(upper) else -inf if cls._is_ninf(upper) else upper
+        left = left if lower not in [inf, -inf] else Bound.OPEN
+        right = right if upper not in [inf, -inf] else Bound.OPEN
 
         instance = cls()
         # Check for non-emptiness (otherwise keep instance._intervals = [])
@@ -122,12 +120,18 @@ class Interval:
         return instance
 
     @classmethod
-    def _is_inf(cls, value):
+    def _is_pinf(cls, value):
         """Test whether given value is an infinity."""
-        if value in (inf, -inf):
-            return True
         try:
-            return math.isinf(value)
+            return value == inf or math.isinf(value) and value > 0
+        except TypeError:
+            return False
+
+    @classmethod
+    def _is_ninf(cls, value):
+        """Test whether given value is an infinity."""
+        try:
+            return value == -inf or math.isinf(value) and value < 0
         except TypeError:
             return False
 
